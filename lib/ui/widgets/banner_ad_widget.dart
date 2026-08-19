@@ -86,11 +86,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> with WidgetsBindingObse
   void _refreshAd() {
     if (!mounted) return;
 
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Refresh AdMob Banner Ad
+    if (!kIsWeb && Platform.isAndroid) {
       _loadBannerAd();
     } else {
-      // Rotate Mock Banner Ad for test / web environments
       setState(() {
         _mockAdIndex = (_mockAdIndex + 1) % _mockAds.length;
       });
@@ -98,9 +96,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> with WidgetsBindingObse
   }
 
   void _loadBannerAd() {
-    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
+    if (kIsWeb || !Platform.isAndroid) return;
 
-    // Dispose existing ad before creating a new one
     _bannerAd?.dispose();
     _bannerAd = null;
 
@@ -143,7 +140,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    final isAndroid = !kIsWeb && Platform.isAndroid;
 
     return SafeArea(
       top: false,
@@ -159,7 +156,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> with WidgetsBindingObse
             ),
           ),
         ),
-        child: isMobile && _isLoaded && _bannerAd != null
+        child: isAndroid && _isLoaded && _bannerAd != null
             ? Center(
                 child: SizedBox(
                   width: _bannerAd!.size.width.toDouble(),

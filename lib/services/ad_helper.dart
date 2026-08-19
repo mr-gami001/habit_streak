@@ -4,45 +4,24 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdHelper {
   static Future<void> initialize() async {
-    if (kIsWeb) return;
+    if (kIsWeb || !Platform.isAndroid) return;
     await MobileAds.instance.initialize();
     AppOpenAdManager.instance.loadAd();
   }
 
-  /// Official Google AdMob Test Banner Unit IDs
+  /// Android Google AdMob Test Banner Unit ID
   static String get bannerAdUnitId {
-    if (kIsWeb) return '';
-    if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111';
-    } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716';
-    } else {
-      throw UnsupportedError('Unsupported platform for AdMob');
-    }
+    return 'ca-app-pub-3940256099942544/6300978111';
   }
 
-  /// Official Google AdMob Test Rewarded Video Unit IDs
+  /// Android Google AdMob Test Rewarded Video Unit ID
   static String get rewardedAdUnitId {
-    if (kIsWeb) return '';
-    if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/5224354917';
-    } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712485313';
-    } else {
-      throw UnsupportedError('Unsupported platform for AdMob');
-    }
+    return 'ca-app-pub-3940256099942544/5224354917';
   }
 
-  /// Official Google AdMob Test App Open Unit IDs
+  /// Android Google AdMob Test App Open Unit ID
   static String get appOpenAdUnitId {
-    if (kIsWeb) return '';
-    if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/9257395921';
-    } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/5604910862';
-    } else {
-      throw UnsupportedError('Unsupported platform for AdMob');
-    }
+    return 'ca-app-pub-3940256099942544/9257395921';
   }
 
   /// Helper function to load and present a Rewarded Video Ad safely
@@ -51,8 +30,7 @@ class AdHelper {
     VoidCallback? onAdFailedToLoad,
     VoidCallback? onAdDismissed,
   }) {
-    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
-      // Fallback for non-supported ad platforms (e.g. desktop/web testing)
+    if (kIsWeb || !Platform.isAndroid) {
       onRewardEarned();
       return;
     }
@@ -87,7 +65,7 @@ class AdHelper {
   }
 }
 
-/// Manager class to handle loading and showing App Open Ads when the user launches or opens the app.
+/// Manager class to handle loading and showing App Open Ads for Android platform.
 class AppOpenAdManager {
   static final AppOpenAdManager instance = AppOpenAdManager._internal();
   AppOpenAdManager._internal();
@@ -103,7 +81,7 @@ class AppOpenAdManager {
   }
 
   void loadAd() {
-    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
+    if (kIsWeb || !Platform.isAndroid) return;
     if (isAdAvailable) return;
 
     AppOpenAd.load(
@@ -122,7 +100,7 @@ class AppOpenAdManager {
   }
 
   void showAdIfAvailable({VoidCallback? onAdComplete}) {
-    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+    if (kIsWeb || !Platform.isAndroid) {
       onAdComplete?.call();
       return;
     }
