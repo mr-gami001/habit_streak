@@ -17,10 +17,28 @@ class HabitStorageException implements Exception {
 abstract class HabitRepository {
   Future<void> init();
   Future<List<Habit>> getHabits();
-  Future<Habit> addHabit(String name);
+  Future<Habit> addHabit(
+    String name, {
+    int? reminderHour,
+    int? reminderMinute,
+    String? category,
+    String? colorHex,
+  });
   Future<Habit> toggleCheckInToday(String habitId);
+  Future<Habit> toggleCheckInForDate(String habitId, DateTime date);
   Future<Habit> recoverStreak(String habitId);
+  Future<void> deleteHabit(String habitId);
+  Future<Habit> updateHabitReminder(String habitId, {int? reminderHour, int? reminderMinute});
+  Future<Habit> updateHabitDetails(
+    String habitId, {
+    required String name,
+    required String category,
+    required String colorHex,
+    required DateTime creationDate,
+  });
+  Future<Habit> updateCalendarEventId(String habitId, String? calendarEventId);
   Future<List<CheckIn>> getCheckInsForHabit(String habitId);
+  Future<void> restoreBackupData({required List<Habit> habits, required List<CheckIn> checkIns});
 }
 
 class HiveHabitRepository implements HabitRepository {
@@ -71,7 +89,13 @@ class HiveHabitRepository implements HabitRepository {
   }
 
   @override
-  Future<Habit> addHabit(String name) async {
+  Future<Habit> addHabit(
+    String name, {
+    int? reminderHour,
+    int? reminderMinute,
+    String? category,
+    String? colorHex,
+  }) async {
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) {
       throw HabitStorageException('Habit name cannot be empty.');
@@ -84,6 +108,10 @@ class HiveHabitRepository implements HabitRepository {
         creationDate: _normalizeDate(DateTime.now()),
         currentStreak: 0,
         longestStreak: 0,
+        reminderHour: reminderHour,
+        reminderMinute: reminderMinute,
+        category: category ?? 'Health',
+        colorHex: colorHex ?? '#00BFA5',
       );
 
       await _habitBox.put(newHabit.id, newHabit);
@@ -95,16 +123,21 @@ class HiveHabitRepository implements HabitRepository {
 
   @override
   Future<Habit> toggleCheckInToday(String habitId) async {
+    return toggleCheckInForDate(habitId, DateTime.now());
+  }
+
+  @override
+  Future<Habit> toggleCheckInForDate(String habitId, DateTime date) async {
     try {
       final habit = _habitBox.get(habitId);
       if (habit == null) {
         throw HabitStorageException('Habit not found.');
       }
 
-      final today = _normalizeDate(DateTime.now());
+      final targetDate = _normalizeDate(date);
 
       final existingCheckIns = _checkInBox.values.where(
-        (c) => c.habitId == habitId && _normalizeDate(c.date).isAtSameMomentAs(today),
+        (c) => c.habitId == habitId && _normalizeDate(c.date).isAtSameMomentAs(targetDate),
       ).toList();
 
       if (existingCheckIns.isNotEmpty) {
@@ -115,7 +148,7 @@ class HiveHabitRepository implements HabitRepository {
         final checkIn = CheckIn(
           id: _uuid.v4(),
           habitId: habitId,
-          date: today,
+          date: targetDate,
         );
         await _checkInBox.put(checkIn.id, checkIn);
       }
@@ -172,6 +205,124 @@ class HiveHabitRepository implements HabitRepository {
     } catch (e) {
       if (e is HabitStorageException) rethrow;
       throw HabitStorageException('Failed to recover streak.', e);
+    }
+  }
+
+  @override
+  Future<void> deleteHabit(String habitId) async {
+    try {
+      await _habitBox.delete(habitId);
+
+      final checkInsToDelete = _checkInBox.values
+          .where((c) => c.habitId == habitId)
+          .map((c) => c.id)
+          .toList();
+
+      for (final checkInId in checkInsToDelete) {
+        await _checkInBox.delete(checkInId);
+      }
+    } catch (e) {
+      throw HabitStorageException('Failed to delete habit from local storage.', e);
+    }
+  }
+
+  @override
+  Future<Habit> updateHabitReminder(
+    String habitId, {
+    int? reminderHour,
+    int? reminderMinute,
+  }) async {
+    try {
+      final habit = _habitBox.get(habitId);
+      if (habit == null) {
+        throw HabitStorageException('Habit not found.');
+      }
+
+      final updated = habit.copyWith(
+        reminderHour: reminderHour,
+        reminderMinute: reminderMinute,
+      );
+
+      await _habitBox.put(habitId, updated);
+      return updated;
+    } catch (e) {
+      if (e is HabitStorageException) rethrow;
+      throw HabitStorageException('Failed to update habit reminder settings.', e);
+    }
+  }
+
+  @override
+  Future<Habit> updateHabitDetails(
+    String habitId, {
+    required String name,
+    required String category,
+    required String colorHex,
+    required DateTime creationDate,
+  }) async {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      throw HabitStorageException('Habit name cannot be empty.');
+    }
+
+    try {
+      final habit = _habitBox.get(habitId);
+      if (habit == null) {
+        throw HabitStorageException('Habit not found.');
+      }
+
+      final updated = habit.copyWith(
+        name: trimmedName,
+        category: category,
+        colorHex: colorHex,
+        creationDate: _normalizeDate(creationDate),
+      );
+
+      await _habitBox.put(habitId, updated);
+      return await _recalculateStreak(updated);
+    } catch (e) {
+      if (e is HabitStorageException) rethrow;
+      throw HabitStorageException('Failed to update habit details.', e);
+    }
+  }
+
+  @override
+  Future<Habit> updateCalendarEventId(String habitId, String? calendarEventId) async {
+    try {
+      final habit = _habitBox.get(habitId);
+      if (habit == null) {
+        throw HabitStorageException('Habit not found.');
+      }
+
+      final updated = habit.copyWith(calendarEventId: calendarEventId);
+      await _habitBox.put(habitId, updated);
+      return updated;
+    } catch (e) {
+      if (e is HabitStorageException) rethrow;
+      throw HabitStorageException('Failed to update calendar event ID.', e);
+    }
+  }
+
+  @override
+  Future<void> restoreBackupData({
+    required List<Habit> habits,
+    required List<CheckIn> checkIns,
+  }) async {
+    try {
+      // Put/merge all habits
+      for (final habit in habits) {
+        await _habitBox.put(habit.id, habit);
+      }
+      // Put/merge all check-ins
+      for (final checkIn in checkIns) {
+        await _checkInBox.put(checkIn.id, checkIn);
+      }
+      // Recalculate streaks for all habits
+      final allHabits = _habitBox.values.toList();
+      for (final habit in allHabits) {
+        await _recalculateStreak(habit);
+      }
+    } catch (e) {
+      throw HabitStorageException('Failed to restore backup data to local storage.', e);
     }
   }
 

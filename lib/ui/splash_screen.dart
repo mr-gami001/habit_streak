@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
-import '../services/ad_helper.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import 'home_screen.dart';
@@ -46,15 +45,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _startInitialization() async {
-    // Hold splash screen for min 2 seconds to allow app data & AdMob preloading
-    await Future.delayed(const Duration(milliseconds: 2000));
+    // Hold splash screen for 1.2 seconds for smooth branding experience, then navigate directly to HomeScreen
+    await Future.delayed(const Duration(milliseconds: 1200));
 
     if (!mounted) return;
-
-    // Show App Open Ad if ready, then transition to HomeScreen
-    AppOpenAdManager.instance.showAdIfAvailable(
-      onAdComplete: _navigateToHome,
-    );
+    _navigateToHome();
   }
 
   void _navigateToHome() {

@@ -1,19 +1,35 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'bloc/habit_bloc.dart';
 import 'bloc/habit_event.dart';
+import 'bloc/notification_cubit.dart';
 import 'bloc/theme_cubit.dart';
 import 'data/habit_repository.dart';
 import 'l10n/app_strings.dart';
 import 'services/ad_helper.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 import 'ui/splash_screen.dart';
+import 'constants/app_secrets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await AdHelper.initialize();
+  await NotificationService.instance.initialize();
+
+  if (kDebugMode) {
+    await MobileAds.instance.updateRequestConfiguration(
+      RequestConfiguration(
+        testDeviceIds: [
+          AppSecrets.testDeviceId,
+        ],
+      ),
+    );
+  }
 
   final repository = HiveHabitRepository();
   await repository.init();
@@ -30,27 +46,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Trigger App Open Ad whenever user re-opens / resumes app
-      AppOpenAdManager.instance.showAdIfAvailable();
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider.value(
@@ -62,6 +58,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ),
           BlocProvider(
             create: (context) => ThemeCubit(),
+          ),
+          BlocProvider(
+            create: (context) => NotificationCubit(repository: widget.repository),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(

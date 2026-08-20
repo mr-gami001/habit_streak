@@ -26,6 +26,9 @@ class AppStrings {
   static const String habitNameValidationError = 'Please enter a habit name';
   static const String cancel = 'Cancel';
   static const String saveHabit = 'Save Habit';
+  static const String setDailyReminder = 'Set Daily Reminder';
+  static const String reminderTimeLabel = 'Reminder Time';
+  static const String selectTime = 'Select Time';
 
   // Habit Details Screen
   static const String currentStreak = 'Current Streak';
@@ -36,8 +39,14 @@ class AppStrings {
   static const String createdOn = 'Created On';
   static const String checkInHistory = 'Check-in History';
   static const String noCheckInsLogged = 'No check-ins logged yet';
-  static const String checkInFromHomeHint = 'Check in from the home screen to build your streak!';
   static const String completed = 'Completed';
+
+  // Heatmap & Calendar View
+  static const String monthlyConsistency = 'Monthly Consistency';
+  static const String tapDateHint = 'Tap any date to toggle check-in status';
+  static const String checkInAddedToast = 'Check-in recorded for ';
+  static const String checkInRemovedToast = 'Check-in removed for ';
+  static const List<String> weekDaysShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   // Snackbars & Ad Messages
   static const String streakRecoveredToast = '🎉 Streak Recovered! Keep up the great work!';
@@ -48,6 +57,32 @@ class AppStrings {
 
   // Banner Ads
   static const String adBadge = 'Ad';
+
+  // Profile & Settings
+  static const String profileAndSettings = 'Profile & Settings';
+  static const String notificationsSection = 'Daily Notifications';
+  static const String enableNotifications = 'Enable Notifications';
+  static const String enableNotificationsSubtitle =
+      'Receive local alarm reminders for your scheduled habits';
+  static const String notificationsEnabledToast = '🔔 Daily Notifications Enabled!';
+  static const String notificationsDisabledToast = '🔕 Daily Notifications Disabled.';
+  static const String appearanceSection = 'Appearance & Theme';
+  static const String themeModeLabel = 'Theme Mode';
+  static const String dataManagementSection = 'Data & Storage';
+  static const String backupAndRestore = 'Backup & Restore';
+  static const String exportBackup = 'Export Backup JSON';
+  static const String exportBackupSubtitle = 'Save habit progress to a JSON backup file';
+  static const String importBackup = 'Import Backup JSON';
+  static const String importBackupSubtitle = 'Restore habits and history from a backup file';
+  static const String importConfirmTitle = 'Import Backup Data?';
+  static const String importConfirmMessage =
+      'This will merge imported habits and check-in records into your local database. Current progress will be preserved. Do you wish to continue?';
+  static const String confirmImportAction = 'Import Data';
+  static const String exportSuccessToast = '✅ Backup JSON exported successfully!';
+  static const String importSuccessToast = '🎉 Backup restored successfully!';
+  static const String importErrorToast = '❌ Invalid or corrupted backup file.';
+  static const String aboutSection = 'About & Privacy';
+  static const String appVersion = 'Version 1.0.0 (100% Offline & Private)';
 
   // Months
   static const List<String> monthsShort = [

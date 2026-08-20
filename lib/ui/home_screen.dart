@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/habit_bloc.dart';
 import '../bloc/habit_event.dart';
 import '../bloc/habit_state.dart';
-import '../bloc/theme_cubit.dart';
 import '../l10n/app_strings.dart';
 import '../models/habit.dart';
 import '../services/ad_helper.dart';
@@ -12,11 +11,19 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import 'add_habit_modal.dart';
 import 'habit_details_screen.dart';
+import 'profile_screen.dart';
 import 'widgets/app_logo_widget.dart';
 import 'widgets/banner_ad_widget.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _selectedCategoryFilter = 'All';
 
   void _openAddHabitModal(BuildContext context) {
     AddHabitModal.show(context);
@@ -54,6 +61,37 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Color _parseColorHex(String hexString) {
+    try {
+      final cleanHex = hexString.replaceAll('#', '');
+      if (cleanHex.length == 6) {
+        return Color(int.parse('FF$cleanHex', radix: 16));
+      } else if (cleanHex.length == 8) {
+        return Color(int.parse(cleanHex, radix: 16));
+      }
+    } catch (_) {}
+    return const Color(0xFF00BFA5);
+  }
+
+  List<String> _getAvailableCategories(List<Habit> habits) {
+    final categoriesSet = <String>{
+      'All',
+      'Health',
+      'Fitness',
+      'Productivity',
+      'Study',
+      'Mindfulness',
+      'Finance',
+      'General',
+    };
+    for (final habit in habits) {
+      if (habit.category.isNotEmpty) {
+        categoriesSet.add(habit.category);
+      }
+    }
+    return categoriesSet.toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,6 +99,15 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.person_rounded),
+          tooltip: AppStrings.profileAndSettings,
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          },
+        ),
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -73,26 +120,12 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-              color: isDark ? Colors.amber : theme.colorScheme.onSurface,
-            ),
-            tooltip: isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme',
-            onPressed: () {
-              context.read<ThemeCubit>().toggleTheme();
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddHabitModal(context),
         icon: const Icon(Icons.add),
         label: const Text(AppStrings.addHabit, style: AppTextStyles.buttonLabel),
       ),
-      // Persistent Banner Ad at bottom (Strict AdMob placement policy compliance)
       bottomNavigationBar: const BannerAdWidget(),
       body: BlocConsumer<HabitBloc, HabitState>(
         listener: (context, state) {
@@ -160,138 +193,274 @@ class HomeScreen extends StatelessWidget {
               );
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 96),
-              itemCount: state.habits.length,
-              itemBuilder: (context, index) {
-                final habit = state.habits[index];
-                final isCompletedToday = state.todayCompletedHabitIds.contains(habit.id);
-                final canRecover = !isCompletedToday && habit.currentStreak == 0;
+            final categories = _getAvailableCategories(state.habits);
+            final filteredHabits = _selectedCategoryFilter == 'All'
+                ? state.habits
+                : state.habits.where((h) => h.category == _selectedCategoryFilter).toList();
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: isCompletedToday
-                        ? BorderSide(
-                            color: isDark
-                                ? AppColors.completedGreenBgDark
-                                : AppColors.completedGreenBgLight,
-                            width: 1.5,
-                          )
-                        : AppColors.cardBorder(context),
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () => _navigateToDetails(context, habit),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(
-                        children: [
-                          // Streak Counter Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isCompletedToday
-                                  ? (isDark ? AppColors.streakFireBgDark : AppColors.streakFireBgLight)
-                                  : theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Text('🔥', style: TextStyle(fontSize: 18)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${habit.currentStreak}',
-                                  style: AppTextStyles.streakBadgeText.copyWith(
-                                    color: isCompletedToday
-                                        ? AppColors.streakFire
-                                        : theme.colorScheme.onSurface,
-                                  ),
+            return Column(
+              children: [
+                // Horizontal Category Filter Bar
+                Container(
+                  height: 48,
+                  margin: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final cat = categories[index];
+                      final isSelected = _selectedCategoryFilter == cat;
+
+                      return FilterChip(
+                        label: Text(cat),
+                        selected: isSelected,
+                        showCheckmark: false,
+                        labelStyle: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurface,
+                        ),
+                        selectedColor: AppColors.primarySeed,
+                        backgroundColor: isDark
+                            ? AppColors.darkSurface
+                            : theme.colorScheme.surfaceContainerHighest,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: isSelected
+                              ? BorderSide.none
+                              : BorderSide(
+                                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
                                 ),
-                              ],
+                        ),
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedCategoryFilter = cat;
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+
+                // Habit List
+                Expanded(
+                  child: filteredHabits.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Text(
+                              'No habits in "$_selectedCategoryFilter" category',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 96),
+                          itemCount: filteredHabits.length,
+                          itemBuilder: (context, index) {
+                            final habit = filteredHabits[index];
+                            final isCompletedToday = state.todayCompletedHabitIds.contains(habit.id);
+                            final canRecover = !isCompletedToday && habit.currentStreak == 0;
+                            final customColor = _parseColorHex(habit.colorHex);
 
-                          // Habit Info
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  habit.name,
-                                  style: isCompletedToday
-                                      ? AppTextStyles.titleMediumCompleted.copyWith(
-                                          color: theme.colorScheme.outline,
-                                        )
-                                      : AppTextStyles.titleMedium.copyWith(
-                                          color: theme.colorScheme.onSurface,
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    customColor.withValues(alpha: isDark ? 0.16 : 0.08),
+                                    isDark ? AppColors.darkSurface : Colors.white,
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: customColor.withValues(alpha: isDark ? 0.15 : 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: isCompletedToday
+                                      ? customColor
+                                      : customColor.withValues(alpha: 0.35),
+                                  width: isCompletedToday ? 1.5 : 1.0,
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(18),
+                                  onTap: () => _navigateToDetails(context, habit),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        // Creative Left Vertical Color Stripe Accent
+                                        Container(
+                                          width: 5,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: customColor,
+                                            borderRadius: BorderRadius.circular(4),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: customColor.withValues(alpha: 0.6),
+                                                blurRadius: 4,
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  isCompletedToday ? AppStrings.doneToday : AppStrings.tapCheckboxToMarkDone,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: isCompletedToday
-                                        ? AppColors.completedGreen
-                                        : theme.colorScheme.outline,
+                                        const SizedBox(width: 12),
+
+                                        // Streak Counter Badge
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: customColor.withValues(alpha: isDark ? 0.25 : 0.12),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: customColor.withValues(alpha: 0.4),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Text('🔥', style: TextStyle(fontSize: 18)),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${habit.currentStreak}',
+                                                style: AppTextStyles.streakBadgeText.copyWith(
+                                                  color: isCompletedToday ? AppColors.streakFire : customColor,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+
+                                        // Habit Info & Category Tag
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                habit.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: isCompletedToday
+                                                    ? AppTextStyles.titleMediumCompleted.copyWith(
+                                                        color: theme.colorScheme.outline,
+                                                      )
+                                                    : AppTextStyles.titleMedium.copyWith(
+                                                        color: theme.colorScheme.onSurface,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  // Category Tag Chip
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: customColor.withValues(alpha: 0.2),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Text(
+                                                      habit.category,
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: customColor,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      isCompletedToday
+                                                          ? AppStrings.doneToday
+                                                          : AppStrings.tapCheckboxToMarkDone,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: AppTextStyles.bodySmall.copyWith(
+                                                        color: isCompletedToday
+                                                            ? AppColors.completedGreen
+                                                            : theme.colorScheme.outline,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+
+                                        if (canRecover) ...[
+                                          TextButton.icon(
+                                            onPressed: () => _triggerStreakRecovery(context, habit),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: AppColors.recoveryAmber,
+                                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                                            ),
+                                            icon: const Icon(Icons.ondemand_video, size: 16),
+                                            label: const Text(
+                                              AppStrings.recover,
+                                              style: AppTextStyles.recoverButtonText,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                        ],
+
+                                        // Toggle Check-in Button
+                                        IconButton.filledTonal(
+                                          iconSize: 26,
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: isCompletedToday
+                                                ? customColor
+                                                : theme.colorScheme.surfaceContainerHigh,
+                                            foregroundColor: isCompletedToday
+                                                ? Colors.white
+                                                : customColor,
+                                          ),
+                                          icon: Icon(
+                                            isCompletedToday
+                                                ? Icons.check_circle_rounded
+                                                : Icons.radio_button_unchecked,
+                                          ),
+                                          onPressed: () {
+                                            context.read<HabitBloc>().add(ToggleCheckInEvent(habit.id));
+                                          },
+                                          tooltip: isCompletedToday
+                                              ? AppStrings.markAsIncomplete
+                                              : AppStrings.markCompletedToday,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-
-                          if (canRecover) ...[
-                            TextButton.icon(
-                              onPressed: () => _triggerStreakRecovery(context, habit),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.recoveryAmber,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
                               ),
-                              icon: const Icon(Icons.ondemand_video, size: 18),
-                              label: const Text(
-                                AppStrings.recover,
-                                style: AppTextStyles.recoverButtonText,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                          ],
-
-                          // Toggle Check-in Button
-                          IconButton.filledTonal(
-                            iconSize: 26,
-                            style: IconButton.styleFrom(
-                              backgroundColor: isCompletedToday
-                                  ? (isDark
-                                      ? AppColors.completedGreenBgDark
-                                      : AppColors.completedGreenBgLight)
-                                  : theme.colorScheme.surfaceContainerHigh,
-                              foregroundColor: isCompletedToday
-                                  ? AppColors.completedGreen
-                                  : theme.colorScheme.outline,
-                            ),
-                            icon: Icon(
-                              isCompletedToday
-                                  ? Icons.check_circle_rounded
-                                  : Icons.radio_button_unchecked,
-                            ),
-                            onPressed: () {
-                              context.read<HabitBloc>().add(ToggleCheckInEvent(habit.id));
-                            },
-                            tooltip: isCompletedToday
-                                ? AppStrings.markAsIncomplete
-                                : AppStrings.markCompletedToday,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+                            );
+                          },
+                        ),
+                ),
+              ],
             );
           }
 
