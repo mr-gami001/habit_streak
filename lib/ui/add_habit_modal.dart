@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/habit_bloc.dart';
 import '../bloc/habit_event.dart';
+import '../constants/app_constants.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -28,28 +29,10 @@ class _AddHabitModalState extends State<AddHabitModal> {
   final _controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  static const List<String> _categories = [
-    'Health',
-    'Fitness',
-    'Productivity',
-    'Study',
-    'Mindfulness',
-    'Finance',
-    'General',
-  ];
+  static const List<String> _categories = AppConstants.defaultCategories;
+  static final List<Map<String, dynamic>> _colorPalette = AppConstants.colorPalette;
 
-  static const List<Map<String, dynamic>> _colorPalette = [
-    {'name': 'Teal', 'hex': '#00BFA5', 'color': Color(0xFF00BFA5)},
-    {'name': 'Purple', 'hex': '#7C4DFF', 'color': Color(0xFF7C4DFF)},
-    {'name': 'Coral', 'hex': '#FF6E40', 'color': Color(0xFFFF6E40)},
-    {'name': 'Emerald', 'hex': '#2ECC71', 'color': Color(0xFF2ECC71)},
-    {'name': 'Amber', 'hex': '#FFB300', 'color': Color(0xFFFFB300)},
-    {'name': 'Ocean', 'hex': '#29B6F6', 'color': Color(0xFF29B6F6)},
-    {'name': 'Rose', 'hex': '#EC407A', 'color': Color(0xFFEC407A)},
-    {'name': 'Indigo', 'hex': '#5C6BC0', 'color': Color(0xFF5C6BC0)},
-  ];
-
-  String _selectedCategory = 'Health';
+  String _selectedCategory = AppStrings.categoryHealth;
   String _selectedColorHex = '#00BFA5';
 
   bool _enableReminder = false;
@@ -89,14 +72,6 @@ class _AddHabitModalState extends State<AddHabitModal> {
     }
   }
 
-  String _formatTimeOfDay(TimeOfDay time) {
-    final now = DateTime.now();
-    final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +138,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
 
               // Category Selection
               Text(
-                'Category',
+                AppStrings.categoryLabel,
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface,
@@ -197,7 +172,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
 
               // Color Theme Palette Selection
               Text(
-                'Color Theme',
+                AppStrings.colorThemeLabel,
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface,
@@ -238,7 +213,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
                         child: isSelected
                             ? const Icon(
                                 Icons.check_rounded,
-                                color: Colors.white,
+                                color: AppColors.pureWhite,
                                 size: 22,
                               )
                             : null,
@@ -270,7 +245,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
                           ),
                         ),
                         subtitle: Text(
-                          'Receive a local daily alarm notification',
+                          AppStrings.setDailyReminderSubtitle,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: theme.colorScheme.outline,
                           ),
@@ -310,7 +285,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
                               ),
                               icon: const Icon(Icons.edit_calendar_rounded, size: 18),
                               label: Text(
-                                _formatTimeOfDay(_selectedTime),
+                                AppConstants.formatTimeOfDay(_selectedTime),
                                 style: AppTextStyles.labelMedium.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primarySeed,

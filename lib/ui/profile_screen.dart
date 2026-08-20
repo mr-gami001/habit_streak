@@ -11,6 +11,7 @@ import '../services/backup_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import 'widgets/app_logo_widget.dart';
+import 'widgets/app_snackbar.dart';
 import 'widgets/banner_ad_widget.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -20,13 +21,7 @@ class ProfileScreen extends StatelessWidget {
     final repository = RepositoryProvider.of<HabitRepository>(context);
     final success = await BackupService.instance.exportBackup(repository);
     if (success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(AppStrings.exportSuccessToast),
-          backgroundColor: AppColors.completedGreen,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBar.showSuccess(context, AppStrings.exportSuccessToast);
     }
   }
 
@@ -58,21 +53,9 @@ class ProfileScreen extends StatelessWidget {
       if (context.mounted) {
         if (success) {
           context.read<HabitBloc>().add(LoadHabitsEvent());
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(AppStrings.importSuccessToast),
-              backgroundColor: AppColors.completedGreen,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppSnackBar.showSuccess(context, AppStrings.importSuccessToast);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(AppStrings.importErrorToast),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppSnackBar.showError(context, AppStrings.importErrorToast);
         }
       }
     }
@@ -184,15 +167,11 @@ class ProfileScreen extends StatelessWidget {
                   activeTrackColor: AppColors.primarySeed,
                   onChanged: (val) {
                     context.read<NotificationCubit>().toggleNotifications(val);
-                    ScaffoldMessenger.of(context).clearSnackBars();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(val
-                            ? AppStrings.notificationsEnabledToast
-                            : AppStrings.notificationsDisabledToast),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    AppSnackBar.showInfo(
+                      context,
+                      val
+                          ? AppStrings.notificationsEnabledToast
+                          : AppStrings.notificationsDisabledToast,
                     );
                   },
                 );
@@ -251,12 +230,12 @@ class ProfileScreen extends StatelessWidget {
                         segments: const [
                           ButtonSegment<ThemeMode>(
                             value: ThemeMode.light,
-                            label: Text('Light'),
+                            label: Text(AppStrings.themeLight),
                             icon: Icon(Icons.light_mode_rounded),
                           ),
                           ButtonSegment<ThemeMode>(
                             value: ThemeMode.dark,
-                            label: Text('Dark'),
+                            label: Text(AppStrings.themeDark),
                             icon: Icon(Icons.dark_mode_rounded),
                           ),
                         ],
@@ -376,12 +355,12 @@ class ProfileScreen extends StatelessWidget {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.15),
+                  color: AppColors.securityBlue.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.security_rounded,
-                  color: Colors.blue,
+                  color: AppColors.securityBlue,
                 ),
               ),
               title: Text(

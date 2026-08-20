@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 /// Reusable App Logo Widget designed for perfect contrast and visibility across both Light and Dark themes.
 class AppLogoWidget extends StatelessWidget {
@@ -32,18 +33,18 @@ class AppLogoWidget extends StatelessWidget {
       padding: EdgeInsets.all(size * 0.12),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFFFFFFFF).withValues(alpha: 0.45) // Soft contrast backdrop for dark theme
-            : const Color(0xFFFFFFFF), // Crisp pure white tile for light theme
+            ? AppColors.pureWhite.withValues(alpha: 0.45) // Soft contrast backdrop for dark theme
+            : AppColors.pureWhite, // Crisp pure white tile for light theme
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.2)
-              : Colors.black.withValues(alpha: 0.08),
+              ? AppColors.pureWhite.withValues(alpha: 0.2)
+              : AppColors.pureBlack.withValues(alpha: 0.08),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+            color: AppColors.pureBlack.withValues(alpha: isDark ? 0.3 : 0.06),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

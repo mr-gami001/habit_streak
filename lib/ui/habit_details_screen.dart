@@ -5,12 +5,14 @@ import '../bloc/habit_bloc.dart';
 import '../bloc/habit_event.dart';
 import '../bloc/habit_state.dart';
 import '../data/habit_repository.dart';
+import '../constants/app_constants.dart';
 import '../l10n/app_strings.dart';
 import '../models/check_in.dart';
 import '../models/habit.dart';
 import '../services/ad_helper.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'widgets/app_snackbar.dart';
 import 'widgets/banner_ad_widget.dart';
 import 'widgets/habit_calendar_heatmap.dart';
 
@@ -59,22 +61,10 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
     AdHelper.showRewardedAd(
       onRewardEarned: () {
         context.read<HabitBloc>().add(RecoverStreakEvent(_currentHabit.id));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(AppStrings.streakRecoveredDetailsToast),
-            backgroundColor: AppColors.completedGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, AppStrings.streakRecoveredDetailsToast);
       },
       onAdFailedToLoad: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(AppStrings.rewardedAdFailedDetails),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showError(context, AppStrings.rewardedAdFailedDetails);
       },
     );
   }
@@ -107,17 +97,6 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
     return false;
   }
 
-  String _formatDate(DateTime dt) {
-    return '${AppStrings.monthsShort[dt.month - 1]} ${dt.day}, ${dt.year}';
-  }
-
-  String _formatReminderTime(int hour, int minute) {
-    final dt = DateTime(2026, 1, 1, hour, minute);
-    final h = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
-    final m = dt.minute.toString().padLeft(2, '0');
-    final p = dt.hour >= 12 ? 'PM' : 'AM';
-    return '$h:$m $p';
-  }
 
   Future<void> _pickAndSetReminder(BuildContext context) async {
     final initialTime = _currentHabit.hasReminder
@@ -137,13 +116,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
               reminderMinute: picked.minute,
             ),
           );
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('🔔 Reminder set for ${_formatReminderTime(picked.hour, picked.minute)}'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBar.showInfo(context, '${AppStrings.reminderSetPrefix}${AppConstants.formatReminderTime(picked.hour, picked.minute)}');
     }
   }
 
@@ -154,13 +127,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
       context.read<HabitBloc>().add(
             UpdateHabitReminderEvent(_currentHabit.id, reminderHour: null, reminderMinute: null),
           );
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🔕 Reminder turned off'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBar.showInfo(context, '🔕 Reminder turned off');
     }
   }
 
@@ -169,26 +136,8 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
     String selectedCategory = _currentHabit.category;
     String selectedColorHex = _currentHabit.colorHex;
 
-    final categories = [
-      'Health',
-      'Fitness',
-      'Productivity',
-      'Study',
-      'Mindfulness',
-      'Finance',
-      'General',
-    ];
-
-    final presetColors = [
-      '#00BFA5',
-      '#7C4DFF',
-      '#FF6E40',
-      '#2ECC71',
-      '#FFB300',
-      '#29B6F6',
-      '#EC407A',
-      '#5C6BC0',
-    ];
+    final categories = AppConstants.defaultCategories;
+    final presetColors = AppConstants.presetColorHexes;
 
     showModalBottomSheet(
       context: context,
@@ -228,7 +177,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                         const Icon(Icons.edit_note_rounded, color: AppColors.primarySeed, size: 28),
                         const SizedBox(width: 10),
                         Text(
-                          'Edit Habit Details',
+                          AppStrings.editHabitDetailsTitle,
                           style: AppTextStyles.titleLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.bold,
@@ -242,7 +191,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                     TextField(
                       controller: nameController,
                       decoration: InputDecoration(
-                        labelText: 'Habit Name',
+                        labelText: AppStrings.habitNameLabel,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -253,7 +202,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
 
                     // Category Selector
                     Text(
-                      'Category',
+                      AppStrings.categoryLabel,
                       style: AppTextStyles.labelMedium.copyWith(
                         color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
@@ -284,7 +233,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
 
                     // Color Theme Swatches
                     Text(
-                      'Theme Color',
+                      AppStrings.themeColorLabel,
                       style: AppTextStyles.labelMedium.copyWith(
                         color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
@@ -294,7 +243,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: presetColors.map((hex) {
-                        final color = _parseColorHex(hex);
+                        final color = AppConstants.parseColorHex(hex);
                         final isSelected = selectedColorHex == hex;
                         return GestureDetector(
                           onTap: () {
@@ -320,7 +269,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                               ],
                             ),
                             child: isSelected
-                                ? const Icon(Icons.check, color: Colors.white, size: 18)
+                                ? const Icon(Icons.check, color: AppColors.pureWhite, size: 18)
                                 : null,
                           ),
                         );
@@ -345,12 +294,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                                   ),
                                 );
                             Navigator.of(modalCtx).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Habit details updated successfully!'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
+                            AppSnackBar.showSuccess(context, AppStrings.habitDetailsUpdatedToast);
                           }
                         },
                         style: FilledButton.styleFrom(
@@ -361,7 +305,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                           ),
                         ),
                         icon: const Icon(Icons.save_rounded),
-                        label: const Text('Save Changes', style: AppTextStyles.buttonLabel),
+                        label: const Text(AppStrings.saveChanges, style: AppTextStyles.buttonLabel),
                       ),
                     ),
                   ],
@@ -374,17 +318,6 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
     );
   }
 
-  Color _parseColorHex(String hexString) {
-    try {
-      final cleanHex = hexString.replaceAll('#', '');
-      if (cleanHex.length == 6) {
-        return Color(int.parse('FF$cleanHex', radix: 16));
-      } else if (cleanHex.length == 8) {
-        return Color(int.parse(cleanHex, radix: 16));
-      }
-    } catch (_) {}
-    return const Color(0xFF00BFA5);
-  }
 
   Future<void> _confirmAndDelete(BuildContext context) async {
     final theme = Theme.of(context);
@@ -400,21 +333,21 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withValues(alpha: 0.15),
+                color: AppColors.dangerRed.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.delete_sweep_rounded,
-                color: Colors.redAccent,
+                color: AppColors.dangerRed,
                 size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Delete Habit?'),
+            const Text(AppStrings.deleteHabitTitle),
           ],
         ),
         content: Text(
-          'Are you sure you want to delete "${_currentHabit.name}"? This action will permanently remove this habit and all check-in history.',
+          AppStrings.deleteConfirmMessage(_currentHabit.name),
           style: AppTextStyles.bodyMedium.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -427,14 +360,14 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
           FilledButton.icon(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.dangerRed,
+              foregroundColor: AppColors.pureWhite,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
             icon: const Icon(Icons.delete_forever_rounded, size: 18),
-            label: const Text('Delete'),
+            label: const Text(AppStrings.deleteAction),
           ),
         ],
       ),
@@ -443,12 +376,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
     if (confirm == true && context.mounted) {
       context.read<HabitBloc>().add(DeleteHabitEvent(_currentHabit.id));
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('"${_currentHabit.name}" deleted'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBar.showInfo(context, AppStrings.habitDeletedMessage(_currentHabit.name));
     }
   }
 
@@ -456,7 +384,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final habitColor = _parseColorHex(_currentHabit.colorHex);
+    final habitColor = AppConstants.parseColorHex(_currentHabit.colorHex);
 
     return BlocListener<HabitBloc, HabitState>(
       listener: (context, state) {
@@ -479,12 +407,12 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.edit_rounded),
-              tooltip: 'Edit Habit',
+              tooltip: AppStrings.editHabit,
               onPressed: () => _showEditHabitModal(context),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_rounded, color: Colors.redAccent),
-              tooltip: 'Delete Habit',
+              icon: const Icon(Icons.delete_rounded, color: AppColors.dangerRed),
+              tooltip: AppStrings.deleteHabit,
               onPressed: () => _confirmAndDelete(context),
             ),
             const SizedBox(width: 4),
@@ -524,27 +452,20 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: AppColors.pureWhite.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             _currentHabit.category.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1,
+                            style: AppTextStyles.categoryChip.copyWith(
+                              color: AppColors.pureWhite,
                             ),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _currentHabit.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.heroTitle,
                         ),
                       ],
                     ),
@@ -553,12 +474,12 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: AppColors.pureWhite.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.star_rounded,
-                      color: Colors.white,
+                      color: AppColors.pureWhite,
                       size: 32,
                     ),
                   ),
@@ -586,7 +507,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                         children: [
                           const Text(
                             '🔥',
-                            style: TextStyle(fontSize: 32),
+                            style: AppTextStyles.emojiHeader,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -626,7 +547,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                         children: [
                           const Text(
                             '🏆',
-                            style: TextStyle(fontSize: 32),
+                            style: AppTextStyles.emojiHeader,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -747,7 +668,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                       ),
                       child: Icon(Icons.category_rounded, color: habitColor),
                     ),
-                    title: Text('Category & Custom Theme Color', style: AppTextStyles.bodyMedium.copyWith(color: theme.colorScheme.onSurface)),
+                    title: Text(AppStrings.categoryAndCustomThemeColor, style: AppTextStyles.bodyMedium.copyWith(color: theme.colorScheme.onSurface)),
                     subtitle: Text(
                       '${_currentHabit.category} (${_currentHabit.colorHex})',
                       style: AppTextStyles.bodySmall.copyWith(
@@ -775,14 +696,14 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                             : theme.colorScheme.outline,
                       ),
                     ),
-                    title: Text(
-                      'Daily Reminder',
-                      style: AppTextStyles.bodyMedium.copyWith(color: theme.colorScheme.onSurface),
+                    title: const Text(
+                      AppStrings.dailyReminderLabel,
+                      style: AppTextStyles.bodyMedium,
                     ),
                     subtitle: Text(
                       _currentHabit.hasReminder
-                          ? 'Scheduled for ${_formatReminderTime(_currentHabit.reminderHour!, _currentHabit.reminderMinute!)}'
-                          : 'No reminder scheduled',
+                          ? '${AppStrings.scheduledForPrefix}${AppConstants.formatReminderTime(_currentHabit.reminderHour!, _currentHabit.reminderMinute!)}'
+                          : AppStrings.noReminderScheduled,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: _currentHabit.hasReminder
                             ? AppColors.primarySeed
@@ -808,7 +729,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                             ),
                           ),
                           icon: const Icon(Icons.edit_calendar_rounded, size: 16),
-                          label: const Text('Change Time', style: TextStyle(fontSize: 12)),
+                          label: const Text(AppStrings.changeTime, style: AppTextStyles.captionSmall),
                         ),
                       ),
                     ),
@@ -823,7 +744,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                       child: Icon(Icons.calendar_today_rounded, color: theme.colorScheme.primary),
                     ),
                     title: Text(AppStrings.createdOn, style: AppTextStyles.bodyMedium.copyWith(color: theme.colorScheme.onSurface)),
-                    subtitle: Text(_formatDate(_currentHabit.creationDate), style: AppTextStyles.bodySmall.copyWith(color: theme.colorScheme.outline)),
+                    subtitle: Text(AppConstants.formatDate(_currentHabit.creationDate), style: AppTextStyles.bodySmall.copyWith(color: theme.colorScheme.outline)),
                   ),
                 ],
               ),
@@ -842,7 +763,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                   ),
                 ),
                 Text(
-                  '${_checkIns.length} Total',
+                  AppStrings.totalCount(_checkIns.length),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: theme.colorScheme.outline,
                   ),
@@ -906,10 +827,10 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundColor: habitColor,
-                        child: const Icon(Icons.check, color: Colors.white),
+                        child: const Icon(Icons.check, color: AppColors.pureWhite),
                       ),
                       title: Text(
-                        _formatDate(checkIn.date),
+                        AppConstants.formatDate(checkIn.date),
                         style: AppTextStyles.titleMedium,
                       ),
                       subtitle: Text(AppStrings.completed, style: AppTextStyles.bodySmall),
@@ -925,10 +846,10 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
               child: FilledButton.icon(
                 onPressed: () => _confirmAndDelete(context),
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.dangerRed,
+                  foregroundColor: AppColors.pureWhite,
                   elevation: 4,
-                  shadowColor: Colors.redAccent.withValues(alpha: 0.5),
+                  shadowColor: AppColors.dangerRed.withValues(alpha: 0.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -936,22 +857,18 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen> {
                 icon: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
+                    color: AppColors.pureWhite.withValues(alpha: 0.25),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.delete_forever_rounded,
-                    color: Colors.white,
+                    color: AppColors.pureWhite,
                     size: 20,
                   ),
                 ),
                 label: const Text(
-                  'Delete This Habit',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+                  AppStrings.deleteThisHabit,
+                  style: AppTextStyles.actionButtonLarge,
                 ),
               ),
             ),

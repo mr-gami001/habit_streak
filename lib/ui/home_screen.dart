@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/habit_bloc.dart';
 import '../bloc/habit_event.dart';
 import '../bloc/habit_state.dart';
+import '../constants/app_constants.dart';
 import '../l10n/app_strings.dart';
 import '../models/habit.dart';
 import '../services/ad_helper.dart';
@@ -13,6 +14,7 @@ import 'add_habit_modal.dart';
 import 'habit_details_screen.dart';
 import 'profile_screen.dart';
 import 'widgets/app_logo_widget.dart';
+import 'widgets/app_snackbar.dart';
 import 'widgets/banner_ad_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCategoryFilter = 'All';
+  String _selectedCategoryFilter = AppStrings.allCategoryFilter;
 
   void _openAddHabitModal(BuildContext context) {
     AddHabitModal.show(context);
@@ -41,48 +43,19 @@ class _HomeScreenState extends State<HomeScreen> {
     AdHelper.showRewardedAd(
       onRewardEarned: () {
         context.read<HabitBloc>().add(RecoverStreakEvent(habit.id));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(AppStrings.streakRecoveredToast),
-            backgroundColor: AppColors.completedGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, AppStrings.streakRecoveredToast);
       },
       onAdFailedToLoad: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(AppStrings.rewardedAdFailedHome),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showError(context, AppStrings.rewardedAdFailedHome);
       },
     );
   }
 
-  Color _parseColorHex(String hexString) {
-    try {
-      final cleanHex = hexString.replaceAll('#', '');
-      if (cleanHex.length == 6) {
-        return Color(int.parse('FF$cleanHex', radix: 16));
-      } else if (cleanHex.length == 8) {
-        return Color(int.parse(cleanHex, radix: 16));
-      }
-    } catch (_) {}
-    return const Color(0xFF00BFA5);
-  }
 
   List<String> _getAvailableCategories(List<Habit> habits) {
     final categoriesSet = <String>{
-      'All',
-      'Health',
-      'Fitness',
-      'Productivity',
-      'Study',
-      'Mindfulness',
-      'Finance',
-      'General',
+      AppStrings.allCategoryFilter,
+      ...AppStrings.defaultCategories,
     };
     for (final habit in habits) {
       if (habit.category.isNotEmpty) {
@@ -130,13 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: BlocConsumer<HabitBloc, HabitState>(
         listener: (context, state) {
           if (state is HabitError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colorScheme.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            AppSnackBar.showError(context, state.message);
           }
         },
         builder: (context, state) {
@@ -194,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
             }
 
             final categories = _getAvailableCategories(state.habits);
-            final filteredHabits = _selectedCategoryFilter == 'All'
+            final filteredHabits = _selectedCategoryFilter == AppStrings.allCategoryFilter
                 ? state.habits
                 : state.habits.where((h) => h.category == _selectedCategoryFilter).toList();
 
@@ -217,9 +184,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: Text(cat),
                         selected: isSelected,
                         showCheckmark: false,
-                        labelStyle: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        labelStyle: (isSelected
+                                ? AppTextStyles.filterChipSelected
+                                : AppTextStyles.filterChipUnselected)
+                            .copyWith(
                           color: isSelected
                               ? theme.colorScheme.onPrimary
                               : theme.colorScheme.onSurface,
@@ -253,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(24.0),
                             child: Text(
-                              'No habits in "$_selectedCategoryFilter" category',
+                              AppStrings.noHabitsInCategory(_selectedCategoryFilter),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: theme.colorScheme.outline,
                               ),
@@ -267,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             final habit = filteredHabits[index];
                             final isCompletedToday = state.todayCompletedHabitIds.contains(habit.id);
                             final canRecover = !isCompletedToday && habit.currentStreak == 0;
-                            final customColor = _parseColorHex(habit.colorHex);
+                            final customColor = AppConstants.parseColorHex(habit.colorHex);
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -276,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 gradient: LinearGradient(
                                   colors: [
                                     customColor.withValues(alpha: isDark ? 0.16 : 0.08),
-                                    isDark ? AppColors.darkSurface : Colors.white,
+                                    isDark ? AppColors.darkSurface : AppColors.pureWhite,
                                   ],
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
@@ -296,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               child: Material(
-                                color: Colors.transparent,
+                                color: AppColors.transparent,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(18),
                                   onTap: () => _navigateToDetails(context, habit),
@@ -337,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           child: Row(
                                             children: [
-                                              const Text('🔥', style: TextStyle(fontSize: 18)),
+                                              const Text('🔥', style: AppTextStyles.emojiInline),
                                               const SizedBox(width: 4),
                                               Text(
                                                 '${habit.currentStreak}',
@@ -384,11 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     ),
                                                     child: Text(
                                                       habit.category,
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: customColor,
-                                                      ),
+                                                      style: AppTextStyles.cardTag.copyWith(color: customColor),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 8),
@@ -436,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ? customColor
                                                 : theme.colorScheme.surfaceContainerHigh,
                                             foregroundColor: isCompletedToday
-                                                ? Colors.white
+                                                ? AppColors.pureWhite
                                                 : customColor,
                                           ),
                                           icon: Icon(

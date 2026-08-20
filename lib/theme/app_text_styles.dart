@@ -79,4 +79,55 @@ class AppTextStyles {
     fontSize: 14,
     fontWeight: FontWeight.bold,
   );
+
+  static const TextStyle categoryChip = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 1.1,
+  );
+
+  static const TextStyle filterChipSelected = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle filterChipUnselected = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+  );
+
+  static const TextStyle emojiHeader = TextStyle(
+    fontSize: 32,
+  );
+
+  static const TextStyle emojiInline = TextStyle(
+    fontSize: 18,
+  );
+
+  static const TextStyle cardTag = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle captionSmall = TextStyle(
+    fontSize: 12,
+  );
+
+  static const TextStyle actionButtonLarge = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+  );
+
+  static const TextStyle heroTitle = TextStyle(
+    color: Colors.white,
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle snackBarText = TextStyle(
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+  );
 }

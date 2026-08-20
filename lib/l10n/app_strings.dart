@@ -84,9 +84,80 @@ class AppStrings {
   static const String aboutSection = 'About & Privacy';
   static const String appVersion = 'Version 1.0.0 (100% Offline & Private)';
 
+  // Categories
+  static const String categoryLabel = 'Category';
+  static const String colorThemeLabel = 'Color Theme';
+  static const String themeColorLabel = 'Theme Color';
+  static const String setDailyReminderSubtitle = 'Receive a local daily alarm notification';
+  static const String allCategoryFilter = 'All';
+
+  static const String categoryHealth = 'Health';
+  static const String categoryFitness = 'Fitness';
+  static const String categoryProductivity = 'Productivity';
+  static const String categoryStudy = 'Study';
+  static const String categoryMindfulness = 'Mindfulness';
+  static const String categoryFinance = 'Finance';
+  static const String categoryGeneral = 'General';
+
+  static const List<String> defaultCategories = [
+    categoryHealth,
+    categoryFitness,
+    categoryProductivity,
+    categoryStudy,
+    categoryMindfulness,
+    categoryFinance,
+    categoryGeneral,
+  ];
+
+  // Color Swatch Names
+  static const String colorTeal = 'Teal';
+  static const String colorPurple = 'Purple';
+  static const String colorCoral = 'Coral';
+  static const String colorEmerald = 'Emerald';
+  static const String colorAmber = 'Amber';
+  static const String colorOcean = 'Ocean';
+  static const String colorRose = 'Rose';
+  static const String colorIndigo = 'Indigo';
+
+  // Edit & Delete Habit
+  static const String editHabit = 'Edit Habit';
+  static const String editHabitDetailsTitle = 'Edit Habit Details';
+  static const String deleteHabit = 'Delete Habit';
+  static const String deleteHabitTitle = 'Delete Habit?';
+  static const String deleteAction = 'Delete';
+  static const String saveChanges = 'Save Changes';
+  static const String habitDetailsUpdatedToast = 'Habit details updated successfully!';
+  static const String reminderSetPrefix = '🔔 Reminder set for ';
+  static const String reminderTurnedOff = '🔕 Reminder turned off';
+  static const String dailyReminderLabel = 'Daily Reminder';
+  static const String noReminderScheduled = 'No reminder scheduled';
+  static const String scheduledForPrefix = 'Scheduled for ';
+  static const String changeTime = 'Change Time';
+
+  // Theme Modes
+  static const String themeSystem = 'System Default';
+  static const String themeLight = 'Light Mode';
+  static const String themeDark = 'Dark Mode';
+
+  // Dynamic Label Helpers
+  static String noHabitsInCategory(String category) => 'No habits in "$category" category';
+  static String deleteConfirmMessage(String name) =>
+      'Are you sure you want to delete "$name"? This action will permanently remove this habit and all check-in history.';
+  static String habitDeletedMessage(String name) => '"$name" deleted';
+  static String totalCount(int count) => '$count Total';
+  static String daysCompleted(int completed, int total) => '$completed / $total Days Completed';
+
+  static const String categoryAndCustomThemeColor = 'Category & Custom Theme Color';
+  static const String deleteThisHabit = 'Delete This Habit';
+
   // Months
   static const List<String> monthsShort = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  static const List<String> monthsFull = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 }

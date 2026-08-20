@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../bloc/habit_bloc.dart';
 import '../../bloc/habit_event.dart';
+import '../../constants/app_constants.dart';
 import '../../l10n/app_strings.dart';
 import '../../models/check_in.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import 'app_snackbar.dart';
 
 class HabitCalendarHeatmap extends StatefulWidget {
   final String habitId;
@@ -54,10 +56,6 @@ class _HabitCalendarHeatmapState extends State<HabitCalendarHeatmap> {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  String _formatMonthYear(DateTime dt) {
-    final monthName = AppStrings.monthsShort[dt.month - 1];
-    return '$monthName ${dt.year}';
-  }
 
   void _onDateTap(DateTime date, bool isCompleted, bool isFuture) {
     if (isFuture) return;
@@ -69,14 +67,11 @@ class _HabitCalendarHeatmapState extends State<HabitCalendarHeatmap> {
         ? '${AppStrings.checkInRemovedToast}$dateStr'
         : '${AppStrings.checkInAddedToast}$dateStr';
 
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (isCompleted) {
+      AppSnackBar.showInfo(context, '$msg');
+    } else {
+      AppSnackBar.showSuccess(context, '$msg');
+    }
   }
 
   @override
@@ -155,7 +150,7 @@ class _HabitCalendarHeatmapState extends State<HabitCalendarHeatmap> {
                       visualDensity: VisualDensity.compact,
                     ),
                     Text(
-                      _formatMonthYear(_focusedMonth),
+                      AppConstants.formatMonthYear(_focusedMonth),
                       style: AppTextStyles.labelMedium.copyWith(
                         color: theme.colorScheme.onSurface,
                       ),
@@ -222,7 +217,7 @@ class _HabitCalendarHeatmapState extends State<HabitCalendarHeatmap> {
                       color: isCompleted
                           ? accentColor
                           : isFuture
-                              ? Colors.transparent
+                              ? AppColors.transparent
                               : (isDark ? AppColors.darkSurface : theme.colorScheme.surfaceContainerHigh),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
@@ -231,7 +226,7 @@ class _HabitCalendarHeatmapState extends State<HabitCalendarHeatmap> {
                             : isCompleted
                                 ? accentColor
                                 : isFuture
-                                    ? Colors.transparent
+                                    ? AppColors.transparent
                                     : (isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder),
                         width: isToday ? 2 : 1,
                       ),
@@ -241,7 +236,7 @@ class _HabitCalendarHeatmapState extends State<HabitCalendarHeatmap> {
                           ? const Icon(
                               Icons.check_rounded,
                               size: 18,
-                              color: Colors.white,
+                              color: AppColors.pureWhite,
                             )
                           : Text(
                               '$dayNumber',
@@ -268,7 +263,7 @@ class _HabitCalendarHeatmapState extends State<HabitCalendarHeatmap> {
               children: [
                 Expanded(
                   child: Text(
-                    '$completedCount / $daysInMonth Days Completed',
+                    AppStrings.daysCompleted(completedCount, daysInMonth),
                     style: AppTextStyles.bodySmall.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface,
